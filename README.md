@@ -17,17 +17,41 @@ Real humanoid stacks suffer **action delay** (network, inference, actuation). A 
 | **History-20 ablation** | Longer observation history (h=20), same DR, no predictor |
 | **Delay-compensated (this work)** | Stage 1 observation predictor + Stage 2 fine-tuned policy under the same DR budget |
 
+## Results
+
+### Main delay sweep (4 policies, fixed delay, 3 eval seeds)
+
 <p align="center">
-  <img src="results/figures/thesis_main_delay_curve.png" alt="Success rate vs action delay — four policies" width="720"/>
+  <img src="results/figures/thesis_main_delay_curve.png" alt="Success rate vs action delay" width="720"/>
+  <br/><sub>Success rate — nominal / strong DR / history-20 / delay-compensated</sub>
 </p>
 
 <p align="center">
-  <img src="results/figures/velocity_tracking_timeseries.png" alt="vx/vy/yaw tracking at d=0,2,4 for all four policies" width="720"/>
+  <img src="results/figures/thesis_main_delay_curve_3panel.png" alt="Success rate, episode length, velocity tracking vs delay" width="900"/>
+  <br/><sub>Success rate · episode length · velocity tracking reward</sub>
 </p>
 
-The redesigned controller (**green**) keeps high success rate at delays where the nominal policy collapses. History-20 (**orange**) matches DR at moderate delay but collapses earlier than compensated at d=8 (160 ms).
+### Velocity tracking time-series (lin_vel_x = 1.0 m/s, d = 0 / 2 / 4 steps)
 
-## Stack
+<p align="center">
+  <img src="results/figures/velocity_tracking_timeseries.png" alt="vx vy yaw tracking for four policies" width="900"/>
+  <br/><sub>Commanded vs actual vx, vy, yaw — all four policies</sub>
+</p>
+
+The redesigned controller (**green**) stays stable where nominal collapses. History-20 (**orange**) helps at moderate delay but falls behind compensated at d=8 (160 ms).
+
+### Raw eval CSV (reproduce figures)
+
+| Policy | Aggregated CSV |
+|--------|----------------|
+| Nominal | [`eval_nominal_agg.csv`](results/csv/eval_nominal_agg.csv) |
+| Strong (DR) | [`eval_strong_agg.csv`](results/csv/eval_strong_agg.csv) |
+| History-20 ablation | [`eval_history20_agg.csv`](results/csv/eval_history20_agg.csv) |
+| Delay-compensated | [`eval_compensated_agg.csv`](results/csv/eval_compensated_agg.csv) |
+
+Tracking time-series: [`results/csv/tracking/`](results/csv/tracking/) (12 clips, seed 42).
+
+Training budget: 2048 envs, 15k iterations, seed 42.
 
 - Isaac Sim 4.5, Isaac Lab 2.1
 - [TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab) (clone separately; not included here)
@@ -91,19 +115,7 @@ Replace the README demo GIF after recording Isaac clips (e.g. `comp_d4` vs `stro
 python analysis/mp4_to_gif.py path/to/comp_d4.mp4 assets/demo_delay_walk.gif --fps 12 --width 640
 ```
 
-## Results in this repo
-
-| File | Description |
-|------|-------------|
-| `results/csv/eval_nominal*.csv` | Nominal baseline eval |
-| `results/csv/eval_strong*.csv` | Delay DR baseline eval |
-| `results/csv/eval_compensated*.csv` | Predictor + fine-tuned policy eval |
-| `results/csv/eval_history20*.csv` | Long-history ablation (when available) |
-| `results/figures/` | Main paper figures |
-
-Training budget: 2048 envs, 15k iterations, seed 42 for all trained policies.
-
-## Author
+## Stack
 
 [glori-a-a](https://github.com/glori-a-a)
 
