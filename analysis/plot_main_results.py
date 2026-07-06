@@ -25,6 +25,11 @@ POLICIES = {
         "color": "#059669",
         "marker": "D",
     },
+    "history20": {
+        "label": "History-20 ablation",
+        "color": "#ea580c",
+        "marker": "^",
+    },
 }
 
 
@@ -102,7 +107,7 @@ def annotate_breakpoints(ax, series: dict[str, pd.DataFrame]) -> None:
         d = int(cliff.iloc[0]["delay_steps"])
         color = POLICIES[key]["color"]
         ax.axvline(d, color=color, linestyle=":", alpha=0.45, linewidth=1.2)
-        y_text = {"nominal": 0.18, "strong": 0.72, "comp": 0.45}.get(key, 0.45)
+        y_text = {"nominal": 0.12, "strong": 0.78, "history20": 0.58, "comp": 0.42}.get(key, 0.45)
         ax.annotate(
             f"{POLICIES[key]['label'].split('(')[0].strip()}\nbreakpoint ≈ d={d}",
             xy=(d, 0.5),
@@ -131,8 +136,13 @@ def main() -> None:
         help="Aggregated CSV for delay-compensated policy.",
     )
     parser.add_argument(
+        "--history20",
+        default="results/csv/eval_history20_agg.csv",
+        help="Aggregated CSV for history-20 ablation.",
+    )
+    parser.add_argument(
         "--out",
-        default="results/thesis_main_delay_curve",
+        default="results/figures/thesis_main_delay_curve",
         help="Output path prefix (without extension).",
     )
     args = parser.parse_args()
@@ -141,12 +151,14 @@ def main() -> None:
     nominal_path = (repo / args.nominal).resolve()
     strong_path = (repo / args.strong).resolve()
     comp_path = (repo / args.comp).resolve()
+    history_path = (repo / args.history20).resolve()
     out_prefix = (repo / args.out).resolve()
     out_prefix.parent.mkdir(parents=True, exist_ok=True)
 
     series = {
         "nominal": load_fixed_delay(nominal_path),
         "strong": load_fixed_delay(strong_path),
+        "history20": load_fixed_delay(history_path),
         "comp": load_fixed_delay(comp_path),
     }
 
@@ -165,7 +177,7 @@ def main() -> None:
     plot_success_rate(ax, series)
     annotate_breakpoints(ax, series)
     fig.suptitle(
-        "Delay robustness: nominal vs DR vs delay-compensated\n"
+        "Delay robustness: nominal vs DR vs history-20 vs delay-compensated\n"
         "(frozen policies, 3 eval seeds, 30 episodes/point)",
         fontsize=11,
         y=1.02,
@@ -198,7 +210,7 @@ def main() -> None:
     )
     axes[1].legend(loc="upper right", framealpha=0.9, fontsize=8)
     fig.suptitle(
-        "Nominal vs strong vs delay-compensated — fixed delay sweep (d = 0…8 steps, 20 ms/step)",
+        "Four-way comparison — fixed delay sweep (d = 0…8 steps, 20 ms/step)",
         fontsize=11,
     )
     fig.tight_layout()

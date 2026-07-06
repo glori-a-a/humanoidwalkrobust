@@ -19,6 +19,7 @@ POLICIES = {
     "nominal": {"label": "Nominal (no delay DR)", "color": "#dc2626", "marker": "s", "ls": "-"},
     "strong": {"label": "Strong (delay DR U[0,5])", "color": "#2563eb", "marker": "o", "ls": "-"},
     "comp": {"label": "Delay-compensated", "color": "#059669", "marker": "D", "ls": "-"},
+    "history20": {"label": "History-20 ablation", "color": "#ea580c", "marker": "^", "ls": "-"},
 }
 
 # TienKung walk_cfg defaults (training); eval locks lin_vel_x=1.0

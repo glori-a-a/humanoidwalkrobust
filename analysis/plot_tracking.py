@@ -10,7 +10,8 @@ import pandas as pd
 POLICY_STYLE = {
     "nominal": {"color": "#dc2626", "label": "Nominal"},
     "strong": {"color": "#2563eb", "label": "Strong (delay DR)"},
-    "comp": {"color": "#7c3aed", "label": "Phase 4 (compensated)"},
+    "history20": {"color": "#ea580c", "label": "History-20 ablation"},
+    "comp": {"color": "#059669", "label": "Delay-compensated"},
 }
 
 DELAY_ORDER = [0, 2, 4]

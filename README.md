@@ -14,13 +14,18 @@ Real humanoid stacks suffer **action delay** (network, inference, actuation). A 
 |----------|----------------|
 | **Nominal** | Standard walk policy, no delay DR |
 | **Strong (DR)** | Trained with uniform delay DR U[0, 5] steps |
+| **History-20 ablation** | Longer observation history (h=20), same DR, no predictor |
 | **Delay-compensated (this work)** | Stage 1 observation predictor + Stage 2 fine-tuned policy under the same DR budget |
 
 <p align="center">
-  <img src="results/figures/thesis_main_delay_curve.png" alt="Success rate vs action delay for nominal, DR, and delay-compensated policies" width="720"/>
+  <img src="results/figures/thesis_main_delay_curve.png" alt="Success rate vs action delay — four policies" width="720"/>
 </p>
 
-The redesigned controller (**green**) keeps high success rate at delays where the nominal policy collapses and outperforms delay DR alone at large delays.
+<p align="center">
+  <img src="results/figures/velocity_tracking_timeseries.png" alt="vx/vy/yaw tracking at d=0,2,4 for all four policies" width="720"/>
+</p>
+
+The redesigned controller (**green**) keeps high success rate at delays where the nominal policy collapses. History-20 (**orange**) matches DR at moderate delay but collapses earlier than compensated at d=8 (160 ms).
 
 ## Stack
 
