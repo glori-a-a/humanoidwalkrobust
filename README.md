@@ -53,6 +53,8 @@ Tracking time-series: [`results/csv/tracking/`](results/csv/tracking/) (12 clips
 
 Training budget: 2048 envs, 15k iterations, seed 42.
 
+## Stack
+
 - Isaac Sim 4.5, Isaac Lab 2.1
 - [TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab) (clone separately; not included here)
 - Python 3.10, CUDA GPU for training and eval
@@ -101,21 +103,7 @@ python legged_lab/scripts/eval_robustness.py --headless --task walk \
 python legged_lab/scripts/aggregate_eval.py results/csv/eval_nominal.csv --out results/csv/eval_nominal_agg
 ```
 
-## Figures (local)
-
-```bash
-python analysis/plot_main_results.py
-python analysis/plot_tracking.py results/csv/tracking --out_dir results/figures
-python analysis/plot_delay_report.py
-```
-
-Replace the README demo GIF after recording Isaac clips (e.g. `comp_d4` vs `strong_d4`):
-
-```bash
-python analysis/mp4_to_gif.py path/to/comp_d4.mp4 assets/demo_delay_walk.gif --fps 12 --width 640
-```
-
-## Stack
+## Author
 
 [glori-a-a](https://github.com/glori-a-a)
 
