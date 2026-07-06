@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+
+# Checkpoints and logs
+*.pt
+*.pth
+*.log
+logs/
+wandb/
+tensorboard/
+
+# Video (share separately)
+*.mp4
+*.avi
+
+# Local dev / cloud (not part of release)
+phase4/
+/scripts/
+/notes/
+configs/
+results/data_bundle/
+results/training_logs/
+results/figures/supervisor_*/
+results/figures/supervisor_final/
+results/figures/vx_tracking/
+results/figs/
+PROJECT_PLAN.md
+RUNPOD_SETUP.md
+SETUP.md
+TienKung-Lab/
+IsaacLab/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
