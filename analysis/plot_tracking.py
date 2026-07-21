@@ -10,11 +10,13 @@ import pandas as pd
 POLICY_STYLE = {
     "nominal": {"color": "#dc2626", "label": "Nominal"},
     "strong": {"color": "#2563eb", "label": "Strong (delay DR)"},
+    "strong30k": {"color": "#1d4ed8", "label": "Strong-30k"},
     "history20": {"color": "#ea580c", "label": "History-20 ablation"},
     "comp": {"color": "#059669", "label": "Delay-compensated"},
+    "v2a_u08": {"color": "#059669", "label": "v2a U[0,8]+2k"},
 }
 
-DELAY_ORDER = [0, 2, 4]
+DELAY_ORDER = [0, 2, 4, 8]
 
 AXES = [
     ("vx", "vx_cmd", "vx_actual", "vx (m/s)", (-0.2, 1.3)),

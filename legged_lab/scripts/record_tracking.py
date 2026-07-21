@@ -158,8 +158,10 @@ def main():
         f"[INFO] policy={meta['policy']} delay={meta['delay_steps']} "
         f"steps={len(rows)} fell={fell} -> {args_cli.output}"
     )
-    sys.exit(0)
+    sys.stdout.flush()
+    os._exit(0)
 
 
 if __name__ == "__main__":
     main()
+    os._exit(0)
