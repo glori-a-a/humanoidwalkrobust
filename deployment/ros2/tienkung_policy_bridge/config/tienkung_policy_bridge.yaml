@@ -1,0 +1,36 @@
+tienkung_policy_bridge:
+  ros__parameters:
+    hardware_mapping_verified: false
+    control_rate_hz: 50.0
+    state_timeout_s: 0.10
+    action_scale: 0.25
+    max_target_velocity: 1.0
+
+    joint_names:
+      - UNVERIFIED_action_00
+      - UNVERIFIED_action_01
+      - UNVERIFIED_action_02
+      - UNVERIFIED_action_03
+      - UNVERIFIED_action_04
+      - UNVERIFIED_action_05
+      - UNVERIFIED_action_06
+      - UNVERIFIED_action_07
+      - UNVERIFIED_action_08
+      - UNVERIFIED_action_09
+      - UNVERIFIED_action_10
+      - UNVERIFIED_action_11
+      - UNVERIFIED_action_12
+      - UNVERIFIED_action_13
+      - UNVERIFIED_action_14
+      - UNVERIFIED_action_15
+      - UNVERIFIED_action_16
+      - UNVERIFIED_action_17
+      - UNVERIFIED_action_18
+      - UNVERIFIED_action_19
+
+    joint_lower: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+                  -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+    joint_upper: [ 1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,
+                   1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0]
+    joint_default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

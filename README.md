@@ -103,6 +103,27 @@ python legged_lab/scripts/eval_robustness.py --headless --task walk \
 python legged_lab/scripts/aggregate_eval.py results/csv/eval_nominal.csv --out results/csv/eval_nominal_agg
 ```
 
+## Deployment evidence
+
+The repository now separates deployment engineering from hardware-originated
+evidence. The code below is reviewable without claiming that a physical
+TienKung run has already happened.
+
+| Evidence | Current status | What a reviewer can verify |
+|---|---|---|
+| ROS 2/C++ deployment bridge | Implemented and unit-tested | Joint-name mapping, watchdog, explicit enable/fault modes, position and rate limits |
+| Policy export and inference | Implemented; generated artifact manifest pending | TorchScript/ONNX packaging, hash manifest, shape/finite checks and latency measurement |
+| Isaac Lab video and results | Available | Simulation execution and delay-robustness evaluation |
+| Exact hardware mapping | Locked pending robot-owner review | Default config cannot activate with guessed joint names |
+| MuJoCo Sim-to-Sim | Not currently evidenced | Must not be claimed until config, logs and video exist |
+| Physical video/telemetry/rosbag | Not currently available | Evidence contract defines what a future real session must capture |
+| Failure record | Available for supported simulator/code failures | Reproducible symptoms, evidence and fixes without invented hardware incidents |
+
+- [Deployment package and commands](deployment/README.md)
+- [Claim-by-claim evidence status](deployment/EVIDENCE_STATUS.md)
+- [Failure and debugging record](deployment/evidence/FAILURE_LOG.md)
+- [Physical-hardware evidence contract](deployment/evidence/hardware_validation/README.md)
+
 ## Author
 
 [glori-a-a](https://github.com/glori-a-a)
