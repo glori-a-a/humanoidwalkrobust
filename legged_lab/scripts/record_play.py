@@ -134,11 +134,17 @@ def main():
     os.makedirs(os.path.dirname(args_cli.video_path) or ".", exist_ok=True)
     imageio.mimwrite(args_cli.video_path, frames, fps=args_cli.fps)
     print(f"[INFO] Saved video: {args_cli.video_path} ({len(frames)} frames, delay={args_cli.action_delay_steps})")
+    # Isaac plugin teardown can hang for minutes; exit immediately after mp4 is written.
+    sys.stdout.flush()
+    os._exit(0)
 
 
 if __name__ == "__main__":
     try:
         main()
     finally:
-        simulation_app.close()
-    sys.exit(0)
+        try:
+            simulation_app.close()
+        except Exception:
+            pass
+    os._exit(0)
