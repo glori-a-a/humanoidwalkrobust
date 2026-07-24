@@ -6,45 +6,45 @@
 
 #include "tienkung_policy_bridge/safety_guard.hpp"
 
-using tienkung_policy_bridge::GuardParameters;
-using tienkung_policy_bridge::JointLimit;
-using tienkung_policy_bridge::Mode;
-using tienkung_policy_bridge::SafetyGuard;
+using namespace tienkung_policy_bridge;
 
 int main() {
-  const std::vector<JointLimit> limits{{-1.0, 1.0, 0.0},
-                                       {-0.5, 0.5, 0.1}};
-  const GuardParameters parameters{0.5, 1.0, 0.1};
+  std::vector<JointLimit> limits{
+      {-1.0, 1.0, 0.0},
+      {-0.5, 0.5, 0.1},
+  };
+  GuardSettings settings{0.5, 1.0, 0.1};
 
-  SafetyGuard guard(limits, parameters);
-  assert(!guard.Enable(1.0));
-  guard.UpdateState(1.0, {0.0, 0.1});
-  assert(guard.mode() == Mode::kStandby);
-  assert(guard.Enable(1.0));
+  auto guard = make_guard(limits, settings);
+  assert(!enable(guard, 1.0));
+  assert(update_state(guard, 1.0, {0.0, 0.1}));
+  assert(guard.mode == Mode::standby);
+  assert(enable(guard, 1.0));
 
-  const auto limited = guard.Command({4.0, -4.0}, 1.02);
-  assert(limited.mode == Mode::kActive);
-  assert(std::abs(limited.target.at(0) - 0.02) < 1e-12);
-  assert(std::abs(limited.target.at(1) - 0.08) < 1e-12);
+  auto limited = make_command(guard, {4.0, -4.0}, 1.02);
+  assert(limited.mode == Mode::active);
+  assert(std::abs(limited.target[0] - 0.02) < 1e-12);
+  assert(std::abs(limited.target[1] - 0.08) < 1e-12);
 
-  const auto stale = guard.Command({0.0, 0.0}, 1.2);
-  assert(stale.mode == Mode::kFault);
+  auto stale = make_command(guard, {0.0, 0.0}, 1.2);
+  assert(stale.mode == Mode::fault);
 
-  SafetyGuard invalid_action_guard(limits, parameters);
-  invalid_action_guard.UpdateState(2.0, {0.0, 0.1});
-  assert(invalid_action_guard.Enable(2.0));
-  const auto invalid_action = invalid_action_guard.Command(
-      {std::numeric_limits<double>::quiet_NaN(), 0.0}, 2.01);
-  assert(invalid_action.mode == Mode::kFault);
+  auto bad_action_guard = make_guard(limits, settings);
+  update_state(bad_action_guard, 2.0, {0.0, 0.1});
+  assert(enable(bad_action_guard, 2.0));
+  auto bad_action = make_command(
+      bad_action_guard,
+      {std::numeric_limits<double>::quiet_NaN(), 0.0},
+      2.01);
+  assert(bad_action.mode == Mode::fault);
 
-  SafetyGuard measured_start_guard(limits, parameters);
-  measured_start_guard.UpdateState(3.0, {0.4, -0.2});
-  assert(measured_start_guard.Enable(3.0));
-  const auto measured_start =
-      measured_start_guard.Command({0.0, 0.0}, 3.01);
-  assert(std::abs(measured_start.target.at(0) - 0.39) < 1e-12);
-  assert(std::abs(measured_start.target.at(1) - (-0.19)) < 1e-12);
+  auto measured_guard = make_guard(limits, settings);
+  update_state(measured_guard, 3.0, {0.4, -0.2});
+  assert(enable(measured_guard, 3.0));
+  auto measured = make_command(measured_guard, {0.0, 0.0}, 3.01);
+  assert(std::abs(measured.target[0] - 0.39) < 1e-12);
+  assert(std::abs(measured.target[1] + 0.19) < 1e-12);
 
-  std::cout << "C++ safety guard tests passed\n";
+  std::cout << "safety guard tests passed\n";
   return 0;
 }
