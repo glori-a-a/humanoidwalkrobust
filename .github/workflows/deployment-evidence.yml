@@ -1,0 +1,49 @@
+name: deployment-evidence
+
+on:
+  push:
+    paths:
+      - "deployment/**"
+      - ".github/workflows/deployment-evidence.yml"
+  pull_request:
+    paths:
+      - "deployment/**"
+      - ".github/workflows/deployment-evidence.yml"
+
+jobs:
+  guard-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run Python safety tests
+        run: python -m unittest discover -s deployment/tests -p 'test_*.py' -v
+
+      - name: Compile Python deployment tools
+        run: |
+          python -m py_compile \
+            deployment/python/policy_artifact.py \
+            deployment/python/policy_runtime.py \
+            deployment/python/runtime_guard.py
+
+      - name: Compile C++ safety tests
+        run: |
+          g++ -std=c++17 -Wall -Wextra -pedantic \
+            deployment/ros2/tienkung_policy_bridge/test/test_safety_guard.cpp \
+            -Ideployment/ros2/tienkung_policy_bridge/include \
+            -o /tmp/test_safety_guard
+
+      - name: Run C++ safety tests
+        run: /tmp/test_safety_guard
+
+      - name: Verify hardware mapping remains fail-closed
+        run: |
+          grep -q "hardware_mapping_verified: false" \
+            deployment/ros2/tienkung_policy_bridge/config/tienkung_policy_bridge.yaml
+          grep -q "UNVERIFIED_action_00" \
+            deployment/ros2/tienkung_policy_bridge/config/tienkung_policy_bridge.yaml
