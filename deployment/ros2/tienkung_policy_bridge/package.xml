@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tienkung_policy_bridge</name>
+  <version>0.1.0</version>
+  <description>Fail-closed ROS 2 bridge for TienKung policy deployment readiness.</description>
+  <maintainer email="xinyue.zhang-32@postgrad.manchester.ac.uk">Xinyue Zhang</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
