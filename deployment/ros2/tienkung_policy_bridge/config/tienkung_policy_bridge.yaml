@@ -1,15 +1,11 @@
 tienkung_policy_bridge:
   ros__parameters:
-    # Fail-closed by design. Set true only after the exact TienKung bodyIdMap,
-    # URDF limits and physical robot revision have been reviewed.
     hardware_mapping_verified: false
     control_rate_hz: 50.0
     state_timeout_s: 0.10
     action_scale: 0.25
     max_target_velocity: 1.0
 
-    # The current locomotion policy has 20 actions. Names are deliberately
-    # placeholders: guessing hardware joint order is unsafe and is not evidence.
     joint_names:
       - UNVERIFIED_action_00
       - UNVERIFIED_action_01
@@ -32,12 +28,9 @@ tienkung_policy_bridge:
       - UNVERIFIED_action_18
       - UNVERIFIED_action_19
 
-    # Conservative placeholders for software tests only. Replace with limits
-    # from the matching physical robot revision before hardware use.
     joint_lower: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
                   -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
     joint_upper: [ 1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,
                    1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0]
     joint_default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
