@@ -118,7 +118,6 @@ TienKung run has already happened.
 | MuJoCo Sim-to-Sim | Not currently evidenced | Must not be claimed until config, logs and video exist |
 | Physical video/telemetry/rosbag | Not currently available | Evidence contract defines what a future real session must capture |
 | Failure record | Available for supported simulator/code failures | Reproducible symptoms, evidence and fixes without invented hardware incidents |
-| Collaborator/supervisor confirmation | Template only | Must be completed by the real reviewer after a hardware session |
 
 - [Deployment package and commands](deployment/README.md)
 - [Claim-by-claim evidence status](deployment/EVIDENCE_STATUS.md)
