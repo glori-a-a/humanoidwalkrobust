@@ -2,168 +2,179 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace tienkung_policy_bridge {
 
-enum class Mode { kStartup, kStandby, kActive, kFault };
+enum class Mode { startup, standby, active, fault };
 
 struct JointLimit {
-  double lower{};
-  double upper{};
-  double default_position{};
+  double lower;
+  double upper;
+  double default_position;
 };
 
-struct GuardParameters {
-  double action_scale{0.25};
-  double max_target_velocity{1.0};
-  double state_timeout_s{0.1};
+struct GuardSettings {
+  double action_scale;
+  double max_target_velocity;
+  double state_timeout;
+};
+
+struct GuardState {
+  std::vector<JointLimit> limits;
+  GuardSettings settings;
+  Mode mode{Mode::startup};
+  std::string fault;
+  std::vector<double> position;
+  std::vector<double> last_target;
+  double state_time{0.0};
+  double last_command_time{0.0};
+  bool has_state{false};
+  bool has_command_time{false};
 };
 
 struct GuardResult {
-  Mode mode{Mode::kStartup};
+  Mode mode;
   std::vector<double> target;
   std::string reason;
 };
 
-class SafetyGuard {
- public:
-  SafetyGuard(std::vector<JointLimit> limits, GuardParameters parameters)
-      : limits_(std::move(limits)),
-        parameters_(parameters),
-        last_target_(limits_.size(), 0.0) {
-    if (limits_.empty()) {
-      throw std::invalid_argument("joint limits must not be empty");
-    }
-    if (!(parameters_.action_scale > 0.0) ||
-        !(parameters_.max_target_velocity > 0.0) ||
-        !(parameters_.state_timeout_s > 0.0)) {
-      throw std::invalid_argument("guard parameters must be positive");
-    }
-    for (std::size_t i = 0; i < limits_.size(); ++i) {
-      const auto& limit = limits_[i];
-      if (!Finite(limit.lower) || !Finite(limit.upper) ||
-          !Finite(limit.default_position) || !(limit.lower < limit.upper) ||
-          limit.default_position < limit.lower ||
-          limit.default_position > limit.upper) {
-        throw std::invalid_argument("invalid joint limit");
-      }
-      last_target_[i] = limit.default_position;
-    }
+inline bool all_finite(const std::vector<double>& values) {
+  return std::all_of(values.begin(), values.end(), [](double value) {
+    return std::isfinite(value);
+  });
+}
+
+inline double clip(double value, double lower, double upper) {
+  return std::min(std::max(value, lower), upper);
+}
+
+inline void set_fault(GuardState& guard, const std::string& reason) {
+  guard.mode = Mode::fault;
+  guard.fault = reason;
+}
+
+inline GuardState make_guard(const std::vector<JointLimit>& limits,
+                             const GuardSettings& settings) {
+  if (limits.empty()) {
+    throw std::invalid_argument("joint limits must not be empty");
+  }
+  if (settings.action_scale <= 0.0 ||
+      settings.max_target_velocity <= 0.0 ||
+      settings.state_timeout <= 0.0) {
+    throw std::invalid_argument("guard settings must be positive");
   }
 
-  void UpdateState(double stamp_s, const std::vector<double>& positions) {
-    if (!Finite(stamp_s) || positions.size() != limits_.size() ||
-        !AllFinite(positions)) {
-      Fault("invalid joint state");
-      return;
+  GuardState guard;
+  guard.limits = limits;
+  guard.settings = settings;
+  for (const auto& limit : limits) {
+    if (!std::isfinite(limit.lower) || !std::isfinite(limit.upper) ||
+        !std::isfinite(limit.default_position) ||
+        limit.lower >= limit.upper ||
+        limit.default_position < limit.lower ||
+        limit.default_position > limit.upper) {
+      throw std::invalid_argument("invalid joint limit");
     }
-    for (std::size_t i = 0; i < positions.size(); ++i) {
-      if (positions[i] < limits_[i].lower ||
-          positions[i] > limits_[i].upper) {
-        Fault("measured joint outside configured limits");
-        return;
-      }
-    }
-    state_stamp_s_ = stamp_s;
-    latest_position_ = positions;
-    state_available_ = true;
-    if (mode_ == Mode::kStartup) {
-      mode_ = Mode::kStandby;
-    }
+    guard.last_target.push_back(limit.default_position);
+  }
+  return guard;
+}
+
+inline bool update_state(GuardState& guard, double stamp,
+                         const std::vector<double>& position) {
+  if (!std::isfinite(stamp) ||
+      position.size() != guard.limits.size() ||
+      !all_finite(position)) {
+    set_fault(guard, "invalid joint state");
+    return false;
   }
 
-  bool Enable(double now_s) {
-    if (mode_ == Mode::kFault || !state_available_ || !Finite(now_s) ||
-        now_s - state_stamp_s_ > parameters_.state_timeout_s ||
-        now_s < state_stamp_s_) {
+  for (std::size_t i = 0; i < position.size(); ++i) {
+    if (position[i] < guard.limits[i].lower ||
+        position[i] > guard.limits[i].upper) {
+      set_fault(guard, "joint position outside limits");
       return false;
     }
-    last_target_ = latest_position_;
-    mode_ = Mode::kActive;
-    last_command_stamp_s_ = now_s;
-    command_time_available_ = true;
-    return true;
   }
 
-  void Standby() {
-    if (mode_ != Mode::kFault) {
-      mode_ = Mode::kStandby;
-    }
+  guard.position = position;
+  guard.state_time = stamp;
+  guard.has_state = true;
+  if (guard.mode == Mode::startup) {
+    guard.mode = Mode::standby;
+  }
+  return true;
+}
+
+inline bool enable(GuardState& guard, double now) {
+  if (guard.mode == Mode::fault || !guard.has_state ||
+      !std::isfinite(now)) {
+    return false;
+  }
+  double age = now - guard.state_time;
+  if (age < 0.0 || age > guard.settings.state_timeout) {
+    return false;
   }
 
-  GuardResult Command(const std::vector<double>& normalized_action,
-                      double now_s) {
-    if (mode_ != Mode::kActive) {
-      return {mode_, last_target_, "guard is not active"};
-    }
-    if (!state_available_ || !Finite(now_s) ||
-        now_s < state_stamp_s_ ||
-        now_s - state_stamp_s_ > parameters_.state_timeout_s) {
-      Fault("stale or invalid robot state");
-      return {mode_, last_target_, fault_reason_};
-    }
-    if (normalized_action.size() != limits_.size() ||
-        !AllFinite(normalized_action)) {
-      Fault("invalid policy action");
-      return {mode_, last_target_, fault_reason_};
-    }
-    if (!command_time_available_ || now_s <= last_command_stamp_s_) {
-      Fault("non-positive command timestep");
-      return {mode_, last_target_, fault_reason_};
-    }
+  guard.last_target = guard.position;
+  guard.last_command_time = now;
+  guard.has_command_time = true;
+  guard.mode = Mode::active;
+  return true;
+}
 
-    const double dt = now_s - last_command_stamp_s_;
-    const double max_delta = parameters_.max_target_velocity * dt;
-    std::vector<double> target(limits_.size(), 0.0);
-    for (std::size_t i = 0; i < limits_.size(); ++i) {
-      const double action = Clamp(normalized_action[i], -1.0, 1.0);
-      const double desired = Clamp(
-          limits_[i].default_position + parameters_.action_scale * action,
-          limits_[i].lower, limits_[i].upper);
-      target[i] = Clamp(desired, last_target_[i] - max_delta,
-                        last_target_[i] + max_delta);
-      target[i] = Clamp(target[i], limits_[i].lower, limits_[i].upper);
-    }
-    last_target_ = target;
-    last_command_stamp_s_ = now_s;
-    return {Mode::kActive, target, "ok"};
+inline void standby(GuardState& guard) {
+  if (guard.mode != Mode::fault) {
+    guard.mode = Mode::standby;
+  }
+}
+
+inline GuardResult make_command(GuardState& guard,
+                                const std::vector<double>& action,
+                                double now) {
+  if (guard.mode != Mode::active) {
+    return {guard.mode, guard.last_target, "guard is not active"};
   }
 
-  Mode mode() const { return mode_; }
-  const std::string& fault_reason() const { return fault_reason_; }
-
- private:
-  static bool Finite(double value) { return std::isfinite(value); }
-
-  static bool AllFinite(const std::vector<double>& values) {
-    return std::all_of(values.begin(), values.end(),
-                       [](double value) { return Finite(value); });
+  double age = now - guard.state_time;
+  if (!std::isfinite(now) || age < 0.0 ||
+      age > guard.settings.state_timeout) {
+    set_fault(guard, "robot state is stale");
+    return {guard.mode, guard.last_target, guard.fault};
   }
 
-  static double Clamp(double value, double lower, double upper) {
-    return std::min(std::max(value, lower), upper);
+  if (action.size() != guard.limits.size() || !all_finite(action)) {
+    set_fault(guard, "invalid policy action");
+    return {guard.mode, guard.last_target, guard.fault};
   }
 
-  void Fault(std::string reason) {
-    mode_ = Mode::kFault;
-    fault_reason_ = std::move(reason);
+  double dt = now - guard.last_command_time;
+  if (!guard.has_command_time || dt <= 0.0) {
+    set_fault(guard, "invalid command time");
+    return {guard.mode, guard.last_target, guard.fault};
   }
 
-  std::vector<JointLimit> limits_;
-  GuardParameters parameters_;
-  std::vector<double> last_target_;
-  std::vector<double> latest_position_;
-  Mode mode_{Mode::kStartup};
-  std::string fault_reason_;
-  bool state_available_{false};
-  bool command_time_available_{false};
-  double state_stamp_s_{0.0};
-  double last_command_stamp_s_{0.0};
-};
+  double max_change = guard.settings.max_target_velocity * dt;
+  std::vector<double> target;
+  target.reserve(action.size());
+  for (std::size_t i = 0; i < action.size(); ++i) {
+    double value = clip(action[i], -1.0, 1.0);
+    double desired = guard.limits[i].default_position +
+                     guard.settings.action_scale * value;
+    desired = clip(desired, guard.limits[i].lower, guard.limits[i].upper);
+    desired = clip(desired,
+                   guard.last_target[i] - max_change,
+                   guard.last_target[i] + max_change);
+    target.push_back(
+        clip(desired, guard.limits[i].lower, guard.limits[i].upper));
+  }
 
-}  // namespace tienkung_policy_bridge
+  guard.last_target = target;
+  guard.last_command_time = now;
+  return {Mode::active, target, "ok"};
+}
+
+}
