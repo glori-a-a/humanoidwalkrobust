@@ -125,4 +125,3 @@ The same checks run in GitHub Actions.
 - [Current validation status](EVIDENCE_STATUS.md)
 - [Failure and debugging record](evidence/FAILURE_LOG.md)
 - [Hardware evidence contract](evidence/hardware_validation/README.md)
-- [Collaborator attestation template](evidence/COLLABORATOR_ATTESTATION_TEMPLATE.md)
