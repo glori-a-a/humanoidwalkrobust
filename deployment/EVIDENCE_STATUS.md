@@ -16,7 +16,6 @@ This is the single source of truth for claims made from this repository.
 | MuJoCo Sim-to-Sim validation | Not evidenced in the current repository | Required artifacts listed below | Must not be claimed until logs/video/config are added |
 | Physical TienKung run | Not completed / no hardware access | `deployment/evidence/hardware_validation/` contains the evidence contract only | Must not be described as physical deployment |
 | Physical rosbag, joint/IMU telemetry and synchronized video | Not available | Evidence contract only | Must originate from a real robot session |
-| External collaborator or supervisor confirmation | Pending | Attestation template only | Must be signed or sent by the named person |
 
 ## Required promotion rule
 
