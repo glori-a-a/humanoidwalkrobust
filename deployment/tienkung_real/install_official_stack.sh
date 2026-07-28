@@ -18,6 +18,9 @@ fi
 
 git -C "$TARGET" fetch --all --tags
 git -C "$TARGET" checkout --detach "$DEPLOY_COMMIT"
+# Restore the pinned source before applying the patch, so this installer can be
+# run repeatedly without accumulating or conflicting local edits.
+git -C "$TARGET" reset --hard "$DEPLOY_COMMIT"
 
 # Apply the repository-specific policy contract to the genuine upstream StateMLP.
 python3 "$SCRIPT_DIR/patch_official_delay_policy.py" --deploy-root "$TARGET" --check
