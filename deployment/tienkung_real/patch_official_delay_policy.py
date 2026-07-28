@@ -2,12 +2,9 @@
 """Patch the pinned official TienKung StateMLP for this repository's policy.
 
 The official controller already builds the same 75-value observation frame and
-keeps ten frames (750 floats).  The delay predictor is part of the exported
-PyTorch/OpenVINO graph, so C++ must feed the raw delayed history exactly once;
-it must not run a second predictor.
-
-This patch makes that contract explicit and fails fast when an incompatible
-OpenVINO model is installed.
+keeps ten frames (750 floats). The delay predictor is part of the exported
+PyTorch/OpenVINO graph, so C++ feeds the raw delayed history exactly once; it
+does not run a second predictor.
 """
 from __future__ import annotations
 
@@ -48,18 +45,31 @@ constexpr int obs_num = kObsFrameSize * kObsHistoryLength;
 constexpr int kPolicyActionSize = 20;""",
     )
 
+    # The exported network has an explicit batch dimension. The original
+    # upstream tensor was one-dimensional ({750}), which is incompatible with
+    # an OpenVINO model whose input is [1, 750].
+    text = replace_once(
+        text,
+        "ov::Tensor ov_in_tensor0(ov::element::f32, ov::Shape{obs_num}, input_vec.data());",
+        "ov::Tensor ov_in_tensor0(ov::element::f32, ov::Shape{1, obs_num}, input_vec.data());",
+    )
+
     text = replace_once(
         text,
         '  model = core.read_model(mlp_path + ".xml",  mlp_path + ".bin");\n  compiled_model = core.compile_model(model, "CPU");',
         '''  model = core.read_model(mlp_path + ".xml", mlp_path + ".bin");
 
+  if (model->inputs().size() != 1 || model->outputs().size() != 1) {
+    throw std::runtime_error("Delay policy must have exactly one input and one output");
+  }
   const auto input_shape = model->input(0).get_partial_shape();
   const auto output_shape = model->output(0).get_partial_shape();
-  if (model->inputs().size() != 1 || model->outputs().size() != 1 ||
-      input_shape.rank().is_dynamic() || output_shape.rank().is_dynamic() ||
+  if (input_shape.rank().is_dynamic() || output_shape.rank().is_dynamic() ||
       input_shape.rank().get_length() != 2 || output_shape.rank().get_length() != 2 ||
-      input_shape[1].is_dynamic() || output_shape[1].is_dynamic() ||
-      input_shape[1].get_length() != obs_num ||
+      input_shape[0].is_dynamic() || input_shape[1].is_dynamic() ||
+      output_shape[0].is_dynamic() || output_shape[1].is_dynamic() ||
+      input_shape[0].get_length() != 1 || input_shape[1].get_length() != obs_num ||
+      output_shape[0].get_length() != 1 ||
       output_shape[1].get_length() != kPolicyActionSize) {
     throw std::runtime_error(
         "Delay-compensated policy contract mismatch: expected [1,750] -> [1,20]");
